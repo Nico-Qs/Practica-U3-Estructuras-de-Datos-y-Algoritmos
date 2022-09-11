@@ -1,159 +1,147 @@
-import csv
-
+import numpy as np
 
 class Nodo:
-	__valor: int
-	__siguiente: int
+    __valor: int
+    __siguiente: int
 
-	def __init__(self, valor):
-		self.__valor = valor
-		self.__siguiente = None
+    def __init__(self, valor,siguiente = None):
+        self.__valor = valor
+        self.__siguiente = siguiente
 
-	def getValor(self):
-		return self.__valor
+    def getValor(self):
+        return self.__valor
 
-	def setValor(self, valor):
-		self.__valor = valor
+    def setValor(self, valor):
+        self.__valor = valor
 
-	def getSiguiente(self):
-		return self.__siguiente
+    def getSiguiente(self):
+        return self.__siguiente
 
-	def setSiguiente(self, siguiente):
-		self.__siguiente = siguiente
+    def setSiguiente(self, siguiente):
+        self.__siguiente = siguiente
 
-#--------------------------------------------------------------
-
-class EncadenadaPosicion:
-    __cabeza:Nodo
-    __cantidad:int
+class EncadenadaCursor():
+    __inicio:int
+    __iniciovacia:int
+    __items:Nodo
+    __cantidadElem:int
     
-    def __init__(self):
-        self.__cabeza = None
-        self.__cantidad = 0
-        
-    
+    def __init__(self,dimension) -> None:
+        self.__items=np.empty(dimension,dtype=Nodo)
+        self.__inicio = -1
+        self.__iniciovacia = 0
+        self.__cantidadElem = 0
+
+        for i in range(dimension - 1):
+            self.__items[i] = Nodo(None,i+1)
+        self.__items[dimension - 1] = Nodo(None,-1)
+
     def Vacia(self):
-        return self.__cabeza == None
+        return self.__inicio == -1
+    
+    def posValida(self,pos):
+        return pos >= 0 and pos-1 < self.__cantidadElem
 
-    def insert(self, value):
-        nuevo = Nodo(value)
-        if self.__cabeza is None:
-            nuevo.setSiguiente(self.__cabeza)
-            self.__cabeza = nuevo
-        elif self.__cabeza.getValor() > value:
-            nuevo.setSiguiente(self.__cabeza)
-            self.__cabeza = nuevo
-        else:
-            aux = self.__cabeza
-            while True:
-                if aux.getSiguiente() is None:
-                    aux.setSiguiente(nuevo)
-                    break
-                elif aux.getSiguiente().getValor() >= value:
-                    nuevo.setSiguiente(aux.getSiguiente()) 
-                    aux.setSiguiente(nuevo) 
-                    break
-                aux=aux.getSiguiente()
-        self.__cantidad += 1
-    
-    """
-    def insert(self, value):
-        nuevo = Nodo(value)
-        if self.__cabeza is None:
-			nuevo.setSiguiente(self.__cabeza)
-            self.__cabeza = nuevo
-        elif self.__cabeza.getValor() > value:
-			nuevo.setSiguiente(self.__cabeza)
-            self.__cabeza = nuevo
-        else:
-            aux = self.__cabeza
-            while True:
-                if aux.getSiguiente() is None:
-					aux.setSiguiente(nuevo)
-                    break
-                elif aux.getSiguiente().getValor() >= value:
-					nuevo.setSiguiente(aux.getSiguiente())
-					aux.setSiguiente(nuevo)
-                    break
-                aux = aux.getSiguiente()
-    """
-    
-    
-    def suprimir(self,valor):
+    def insertar(self, valor, posicion):
         if self.Vacia():
-            print("Lista vacia")
+            self.__inicio = posicion
+            self.__items[self.__inicio] = Nodo(valor)
+            self.__items[self.__inicio].setSiguiente(-1)
+            self.__iniciovacia += 1
         else:
-            aux = self.__cabeza
-            if aux.getValor() == valor:
-                self.__cabeza = aux.getSiguiente()
+            if self.posValida(posicion):
+                aux = self.__inicio
+                while self.__items[aux].getSiguiente() != -1 and aux != posicion:
+                    aux = self.__items[aux].getSiguiente()
+                if aux != posicion:
+                    self.__items[self.__iniciovacia] = Nodo(valor)
+                    self.__items[self.__iniciovacia].setSiguiente(self.__items[aux].getSiguiente()) 
+                    self.__items[aux].setSiguiente(self.__iniciovacia) 
+                else:
+                    self.__items[aux].setValor(valor)
+                self.__iniciovacia += 1
             else:
-                while aux.getSiguiente() != None:
-                    if aux.getSiguiente().getValor() == valor:
-                        aux.setSiguiente(aux.getSiguiente().getSiguiente())
-                        break
-                    aux = aux.getSiguiente()
+                print("Posicion no valida")
+        self.__cantidadElem += 1
+
+    def eliminar(self,posicion):
+        if self.Vacia():
+            raise Exception("Lista vacia")
+        elif not self.posValida(posicion):
+            raise Exception("Posicion no valida")
+        else:
+            if posicion == 0:
+                aux = self.__inicio
+                self.__inicio = self.__items[aux].getSiguiente()
+                self.__items[aux].setSiguiente(self.__iniciovacia)
+                self.__iniciovacia = aux
+            else:
+                aux = self.__inicio
+                while self.__items[aux].getSiguiente() != posicion:
+                    aux = self.__items[aux].getSiguiente()
+                Nodoanterior = self.__items[aux]
+                aux = Nodoanterior.getSiguiente()
+                Nodoanterior.setSiguiente(self.__items[aux].getSiguiente())
+                self.__items[aux].setSiguiente(self.__iniciovacia)
+                self.__iniciovacia = aux
+    
+    def getPrimero(self):
+        if self.Vacia():
+            return None
+        else:
+            return self.__items[self.__inicio].getValor()
+
+    def getUltimo(self):
+        if self.Vacia():
+            return None
+        else:
+            aux = self.__inicio
+            while self.__items[aux].getSiguiente() != -1 :
+                aux = self.__items[aux].getSiguiente()
+            return self.__items[aux].getValor()
+
+    def recuperarArreglo(self,pos):
+        aux = self.__inicio
+        while aux != -1 and aux != pos:
+            aux=self.__items[aux].getSiguiente()
+        if aux == pos:
+            return self.__items[aux]
+        else:
+            return None
 
     def recuperar(self,posicion):
-        if self.Vacia():
-            print("Lista vacia")
-        elif not self.posValida(posicion):
-            print("Posicion no valida")
+        aux = self.__inicio
+        while aux != -1 and aux != posicion:
+            aux=self.__items[aux].getSiguiente()
+        if aux == posicion:
+            return self.__items[aux].getValor()
         else:
-            aux = self.__cabeza
-            pos = 1
-            while pos < posicion:
-                aux = aux.getSiguiente()
-                pos += 1
-            return aux.getValor()
-    
+            return None
+
     def buscar(self,valor):
-        aux = self.__cabeza
-        pos = 1
-        while aux != None:
-            if aux.getValor() == valor:
-                return pos
-            aux = aux.getSiguiente()
-            pos += 1
-        return -1
-
-    def primerElemento(self):
-        if self.Vacia():
-            print("Lista vacia")
-        else:
-            return self.__cabeza.getValor()
-    
-    
-    def ultimoElemento(self):
-        if self.Vacia():
-            print("Lista vacia")
-        else:
-            aux = self.__cabeza
-            while aux.getSiguiente() != None:
-                aux = aux.getSiguiente()
-            return aux.getValor()
-    
-    def getSiguiente(self,elemento):
-        if self.Vacia():
-            print("Lista vacia")
-        else:
-            aux = self.__cabeza
-            while aux != None:
-                if aux.getValor() == elemento:
-                    return aux.getSiguiente().getValor()
-                aux = aux.getSiguiente()
-
-    def getAnterior(self,elemento):
-        if self.Vacia():
-            print("Lista vacia")
-        else:
-            aux = self.__cabeza
-            while aux.getSiguiente() != None:
-                if aux.getSiguiente().getValor() == elemento:
-                    return aux.getValor()
-                aux = aux.getSiguiente()
+        aux = self.__inicio
+        while aux != -1 and self.__items[aux].getValor() != valor:
+            aux=self.__items[aux].getSiguiente()
+        return aux
 
     def mostrar(self):
-        aux = self.__cabeza
-        while aux != None:
-            print(aux.getValor())
-            aux = aux.getSiguiente()
+        aux = self.__inicio
+        cadena=""
+        while aux != -1:
+            cadena += str(self.__items[aux].getValor()) + " "
+            print(self.__items[aux].getValor())
+            aux = self.__items[aux].getSiguiente()
+        print("[ "+cadena+"]")
+
+if __name__=="__main__":
+    lista = EncadenadaCursor(4)
+    lista.insertar(1,0)
+    lista.insertar(2,1)
+    lista.insertar(5,2)
+    lista.insertar(10,3)
+    lista.insertar(6,0)
+    lista.eliminar(0)
+    lista.eliminar(3)
+    lista.mostrar()
+    print("El dato es :{}".format(lista.recuperar(1)))
+    print("El dato se encuentra en la posicion :{}".format(lista.buscar(2)))
